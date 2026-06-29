@@ -1,0 +1,315 @@
+/* ============================================================
+   DevPulse — Global Design System
+   @import must be the first statement, then custom properties,
+   then resets, then utilities, then animations.
+   ============================================================ */
+
+   @import 'tailwindcss';
+
+   /* ── Design Tokens ───────────────────────────────────────────── */
+   :root {
+     /* Brand */
+     --dp-brand-50: #eff6ff;
+     --dp-brand-100: #dbeafe;
+     --dp-brand-500: #3b82f6;
+     --dp-brand-600: #2563eb;
+     --dp-brand-700: #1d4ed8;
+   
+     /* Surface */
+     --dp-surface-0: #ffffff;
+     --dp-surface-50: #f8fafc;
+     --dp-surface-100: #f1f5f9;
+     --dp-surface-200: #e2e8f0;
+   
+     /* Text */
+     --dp-text-primary: #0f172a;
+     --dp-text-secondary: #475569;
+     --dp-text-muted: #94a3b8;
+   
+     /* Status */
+     --dp-success: #22c55e;
+     --dp-warning: #f59e0b;
+     --dp-danger: #ef4444;
+   
+     /* Layout */
+     --dp-sidebar-w: 256px;
+     --dp-radius-sm: 0.375rem;
+     --dp-radius-md: 0.625rem;
+     --dp-radius-lg: 0.875rem;
+     --dp-radius-xl: 1.125rem;
+   
+     /* Shadows */
+     --dp-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+     --dp-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+     --dp-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+   
+     /* Transitions */
+     --dp-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+   }
+   
+   :root[data-theme='dark'],
+   .dark {
+     /* Brand */
+     --dp-brand-50: #020615;
+     /* unchanged — true void black */
+     --dp-brand-100: #0d1f45;
+     /* deeper navy, was too washed out */
+     --dp-brand-500: #1a3a6e;
+     /* richer mid-navy for active states */
+     --dp-brand-600: #3b82f6;
+     /* full blue-500 for primary actions */
+     --dp-brand-700: #60a5fa;
+     /* softer interactive hover */
+   
+     /* Surface — the key fix */
+     --dp-surface-0: #111827;
+     /* true dark card/panel (was slate-700, too light) */
+     --dp-surface-50: #0d1117;
+     /* page background — near-black with blue undertone */
+     --dp-surface-100: #1c2333;
+     /* raised layer / sidebar */
+     --dp-surface-200: #273044;
+     /* hover states / borders */
+   
+     /* Text */
+     --dp-text-primary: #f0f6fc;
+     /* warm-white, less harsh than #f8fafc */
+     --dp-text-secondary: #b8c7d9;
+     /* clearer mid-tone (was too close to muted) */
+     --dp-text-muted: #8d9ba8;
+     /* placeholder / disabled */
+   }
+   
+   @theme {
+     --color-white: var(--dp-surface-0);
+     --color-slate-50: var(--dp-surface-50);
+     --color-slate-100: var(--dp-surface-100);
+     --color-slate-200: var(--dp-surface-200);
+     --color-slate-300: var(--dp-surface-200);
+   
+     --color-slate-800: var(--dp-text-primary);
+     --color-slate-700: var(--dp-text-secondary);
+     --color-slate-600: var(--dp-text-secondary);
+     --color-slate-500: var(--dp-text-muted);
+     --color-slate-400: var(--dp-text-muted);
+   
+     --color-blue-50: var(--dp-brand-50);
+     --color-blue-100: var(--dp-brand-100);
+     --color-blue-600: var(--dp-brand-600);
+   }
+   
+   /* ── Base Resets ─────────────────────────────────────────────── */
+   *,
+   *::before,
+   *::after {
+     box-sizing: border-box;
+   }
+   
+   html {
+     font-size: 16px;
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
+     text-rendering: optimizeLegibility;
+     scroll-behavior: smooth;
+   }
+   
+   body {
+     margin: 0;
+     background-color: var(--dp-surface-50);
+     color: var(--dp-text-primary);
+     font-family:
+       'Inter',
+       system-ui,
+       -apple-system,
+       BlinkMacSystemFont,
+       'Segoe UI',
+       Roboto,
+       sans-serif;
+     line-height: 1.5;
+   }
+   
+   /* ── Custom Scrollbar ────────────────────────────────────────── */
+   ::-webkit-scrollbar {
+     width: 6px;
+     height: 6px;
+   }
+   
+   ::-webkit-scrollbar-track {
+     background: transparent;
+   }
+   
+   ::-webkit-scrollbar-thumb {
+     background: #cbd5e1;
+     border-radius: 99px;
+   }
+   
+   ::-webkit-scrollbar-thumb:hover {
+     background: #94a3b8;
+   }
+   
+   /* ── Focus Ring ──────────────────────────────────────────────── */
+   :focus-visible {
+     outline: 2px solid var(--dp-brand-500);
+     outline-offset: 2px;
+     border-radius: var(--dp-radius-sm);
+   }
+   
+   /* ── App Loading Screen ──────────────────────────────────────── */
+   .loading-container {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     min-height: 100vh;
+     gap: 1rem;
+     background: var(--dp-surface-50);
+     color: var(--dp-text-secondary);
+     font-size: 0.875rem;
+     font-weight: 500;
+   }
+   
+   .loading-container .pulse {
+     width: 2.5rem;
+     height: 2.5rem;
+     border-radius: 50%;
+     background: var(--dp-brand-500);
+     animation: dp-pulse 1.4s ease-in-out infinite;
+   }
+   
+   /* ── Error Boundary ──────────────────────────────────────────── */
+   .error-boundary {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 0.75rem;
+     padding: 3rem 2rem;
+     text-align: center;
+   }
+   
+   .error-boundary__icon {
+     font-size: 2.5rem;
+   }
+   
+   .error-boundary__title {
+     margin: 0;
+     font-size: 1.25rem;
+     font-weight: 700;
+     color: var(--dp-text-primary);
+   }
+   
+   .error-boundary__message {
+     margin: 0;
+     font-size: 0.875rem;
+     color: var(--dp-text-secondary);
+     max-width: 36ch;
+   }
+   
+   .error-boundary__btn {
+     margin-top: 0.5rem;
+     padding: 0.5rem 1.25rem;
+     background: var(--dp-brand-600);
+     color: #fff;
+     border: none;
+     border-radius: var(--dp-radius-md);
+     font-size: 0.875rem;
+     font-weight: 600;
+     cursor: pointer;
+     transition: background var(--dp-transition);
+   }
+   
+   .error-boundary__btn:hover {
+     background: var(--dp-brand-700);
+   }
+   
+   /* ── Animations ──────────────────────────────────────────────── */
+   @keyframes dp-pulse {
+     0%,
+     100% {
+       transform: scale(1);
+       opacity: 1;
+     }
+   
+     50% {
+       transform: scale(1.2);
+       opacity: 0.7;
+     }
+   }
+   
+   @keyframes dp-fade-in {
+     from {
+       opacity: 0;
+       transform: translateY(6px);
+     }
+   
+     to {
+       opacity: 1;
+       transform: translateY(0);
+     }
+   }
+   
+   @keyframes dp-slide-in-left {
+     from {
+       transform: translateX(-100%);
+       opacity: 0;
+     }
+   
+     to {
+       transform: translateX(0);
+       opacity: 1;
+     }
+   }
+   
+   @keyframes dp-shimmer {
+     0% {
+       background-position: -400px 0;
+     }
+   
+     100% {
+       background-position: 400px 0;
+     }
+   }
+   
+   @keyframes dp-count-up {
+     from {
+       opacity: 0;
+       transform: translateY(8px) scale(0.95);
+     }
+   
+     to {
+       opacity: 1;
+       transform: translateY(0) scale(1);
+     }
+   }
+   
+   /* ── Animation Utilities ─────────────────────────────────────── */
+   .dp-fade-in {
+     animation: dp-fade-in 0.25s ease forwards;
+   }
+   
+   .dp-slide-in {
+     animation: dp-slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+   }
+   
+   .dp-count-up {
+     animation: dp-count-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+   }
+   
+   /* ── Skeleton Shimmer ────────────────────────────────────────── */
+   .dp-skeleton {
+     background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+     background-size: 800px 100%;
+     animation: dp-shimmer 1.5s infinite linear;
+     border-radius: var(--dp-radius-md);
+   }
+   
+   /* ── Sidebar overlay (mobile) ────────────────────────────────── */
+   .sidebar-overlay {
+     position: fixed;
+     inset: 0;
+     background: rgb(0 0 0 / 0.4);
+     z-index: 40;
+     backdrop-filter: blur(2px);
+     animation: dp-fade-in 0.2s ease;
+   }
+   
