@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import { Activity, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { LoginForm } from './_components/LoginForm.jsx';
@@ -15,8 +15,12 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  const { login, loginByEmail, register, sendOtp, forgotPassword, resetPassword } = useAuth();
+  
+  const { login, loginByEmail, register, sendOtp, forgotPassword, resetPassword, isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    redirect('/dashboard');
+    return null; // Prevent rendering the login page if already authenticated
+  }
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -141,7 +145,7 @@ export function LoginPage() {
   };
 
   const { theme, toggleTheme } = useTheme();
-
+  
   return (
     <div className="min-h-screen flex bg-slate-50 relative overflow-hidden">
       {/* Theme Toggle Button */}

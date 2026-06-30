@@ -8,7 +8,8 @@ import { RefreshCw } from 'lucide-react';
 import { useDashboardTab } from '@/app/dashboard/_hooks/useDashboardTab';
 import { TabBar, SkeletonCard } from '@/components/ui';
 import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
-
+import { useAuth } from '@/context/AuthContext'
+import { redirect } from 'next/navigation';
 // SkeletonStatGrid does not exist in ui barrel
 import {
     OverviewPanel,
@@ -55,6 +56,10 @@ export default function DashboardPage() {
   const { activeTab, tabState, switchTab, refresh } = useDashboardTab('overview');
 
   const hasErrors = Object.keys(tabState.errors ?? {}).length > 0;
+  const {isAuthenticated} = useAuth();  
+  if(!isAuthenticated){
+    redirect("/login")
+  }
 
   return (
     <div className="flex flex-col min-h-screen pb-12">
