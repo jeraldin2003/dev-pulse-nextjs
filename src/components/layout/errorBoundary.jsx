@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * ErrorBoundary.jsx
  * React class-based error boundary.

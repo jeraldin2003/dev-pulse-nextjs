@@ -15,6 +15,7 @@ import { UsersPanel } from '~/features/dashboard/components';
 import { PostsPanel } from '~/features/dashboard/components';
 import { ProductivityPanel } from '~/features/dashboard/components';
 import { TriviaPanel } from '~/features/dashboard/components';
+import { ErrorBoundary } from '~/components/layout';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -36,15 +37,35 @@ function DashboardSkeleton() {
 function ActivePanel({ tabId, data }) {
   switch (tabId) {
     case 'overview':
-      return <OverviewPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <OverviewPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'users':
-      return <UsersPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <UsersPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'posts':
-      return <PostsPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <PostsPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'productivity':
-      return <ProductivityPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <ProductivityPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'trivia':
-      return <TriviaPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <TriviaPanel data={data} />
+        </ErrorBoundary>
+      );
     default:
       return null;
   }

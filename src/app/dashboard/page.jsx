@@ -10,6 +10,7 @@ import { TabBar, SkeletonCard } from '@/components/ui';
 import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
 import { useAuth } from '@/context/AuthContext'
 import { redirect } from 'next/navigation';
+import { ErrorBoundary } from '@/components/layout';
 // SkeletonStatGrid does not exist in ui barrel
 import {
     OverviewPanel,
@@ -38,15 +39,35 @@ function DashboardSkeleton() {
 function ActivePanel({ tabId, data }) {
   switch (tabId) {
     case 'overview':
-      return <OverviewPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <OverviewPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'users':
-      return <UsersPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <UsersPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'posts':
-      return <PostsPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <PostsPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'productivity':
-      return <ProductivityPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <ProductivityPanel data={data} />
+        </ErrorBoundary>
+      );
     case 'trivia':
-      return <TriviaPanel data={data} />;
+      return (
+        <ErrorBoundary>
+          <TriviaPanel data={data} />
+        </ErrorBoundary>
+      );
     default:
       return null;
   }
