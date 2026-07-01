@@ -4,8 +4,8 @@
  * Includes Countries tab (was missing), error banner, and skeleton loading.
  */
 "use client";
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { useDashboardTab } from '@/app/dashboard/_hooks/useDashboardTab';
 import { TabBar, SkeletonCard } from '@/components/ui';
 import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
 import { useAuth } from '@/context/AuthContext'
@@ -36,36 +36,36 @@ function DashboardSkeleton() {
   );
 }
 
-function ActivePanel({ tabId, data }) {
+function ActivePanel({ tabId }) {
   switch (tabId) {
     case 'overview':
       return (
         <ErrorBoundary>
-          <OverviewPanel data={data} />
+          <OverviewPanel />
         </ErrorBoundary>
       );
     case 'users':
       return (
         <ErrorBoundary>
-          <UsersPanel data={data} />
+          <UsersPanel />
         </ErrorBoundary>
       );
     case 'posts':
       return (
         <ErrorBoundary>
-          <PostsPanel data={data} />
+          <PostsPanel />
         </ErrorBoundary>
       );
     case 'productivity':
       return (
         <ErrorBoundary>
-          <ProductivityPanel data={data} />
+          <ProductivityPanel />
         </ErrorBoundary>
       );
     case 'trivia':
       return (
         <ErrorBoundary>
-          <TriviaPanel data={data} />
+          <TriviaPanel />
         </ErrorBoundary>
       );
     default:
@@ -74,13 +74,14 @@ function ActivePanel({ tabId, data }) {
 }
 
 export default function DashboardPage() {
-  const { activeTab, tabState, switchTab, refresh } = useDashboardTab('overview');
-
-  const hasErrors = Object.keys(tabState.errors ?? {}).length > 0;
+  const [activeTab, setActiveTab] = useState('overview');
+  const [refreshKey, setRefreshKey] = useState(0);
   const {isAuthenticated} = useAuth();  
   if(!isAuthenticated){
     redirect("/login")
   }
+
+  const refresh = () => setRefreshKey(prev => prev + 1);
 
   return (
     <div className="flex flex-col min-h-screen pb-12">
@@ -90,36 +91,16 @@ export default function DashboardPage() {
         <button
           type="button"
           onClick={refresh}
-          disabled={tabState.loading}
           aria-label="Refresh current tab"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors duration-150 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-slate-600 font-medium text-sm transition-colors duration-150 cursor-pointer"
         >
-          <RefreshCw
-            size={15}
-            aria-hidden="true"
-            className={tabState.loading ? 'animate-spin' : ''}
-          />
+          <RefreshCw size={15} aria-hidden="true" />
           Refresh
         </button>
       </div>
 
-      {/* Error banner */}
-      {hasErrors && (
-        <div
-          className="flex flex-col gap-1 p-4 mb-6 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm dp-fade-in"
-          role="alert"
-        >
-          <strong className="font-semibold">Some data failed to load:</strong>
-          {Object.entries(tabState.errors).map(([module, message]) => (
-            <span key={module} className="text-rose-700">
-              <span className="font-medium capitalize">{module}:</span> {message}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* Tab bar */}
-      <TabBar tabs={TABS} activeTab={activeTab} onChange={switchTab} disabled={tabState.loading} />
+      <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Panel */}
       <main
@@ -128,20 +109,12 @@ export default function DashboardPage() {
         aria-labelledby={`tab-${activeTab}`}
         className="flex-1 mt-6 dp-fade-in"
       >
-        {tabState.loading ? (
-          <DashboardSkeleton />
-        ) : (
-          <ActivePanel tabId={activeTab} data={tabState.data} />
-        )}
+        <ActivePanel key={`${activeTab}-${refreshKey}`} tabId={activeTab} />
       </main>
 
       {/* Footer */}
       <footer className="flex items-center justify-center pt-6 mt-8 border-t border-slate-200 text-slate-400 text-xs">
-        {tabState.loading
-          ? 'Loading…'
-          : tabState.loadTime > 0
-            ? `Loaded in ${tabState.loadTime} ms`
-            : null}
+        Ready
       </footer>
     </div>
   );

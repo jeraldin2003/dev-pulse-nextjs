@@ -1,13 +1,12 @@
-/**
- * OverviewPanel.jsx
- * Dashboard overview — stat cards + quick facts.
- * Updated to use new colorKey prop on StatCard.
- */
 "use client";
-import { Users, FileText, CheckSquare, Brain, Globe } from 'lucide-react';
-import { StatCard } from '@/components/ui';
-import { SectionTitle } from '@/components/ui';
-import { EmptyState } from '@/components/ui';
+import { Users, FileText, CheckSquare, Brain } from 'lucide-react';
+import { StatCard, SectionTitle, SkeletonCard } from '@/components/ui';
+import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
+import { useFetch } from '@/hooks/useFetch';
+import { userStats } from '@/app/dashboard/_utils/userStats.js';
+import { postAnalysis } from '@/app/dashboard/_utils/postAnalysis.js';
+import { productivityTracker } from '@/app/dashboard/_utils/productivityTracker.js';
+import { triviaScorer } from '@/app/dashboard/_utils/triviaScorer.js';
 
 function getTopCompletion(stats = []) {
   return stats.reduce(
@@ -20,20 +19,40 @@ function getHardestDifficulty(counts = []) {
   return counts.reduce((top, cur) => (cur.count > (top?.count ?? -1) ? cur : top), null);
 }
 
-export default function OverviewPanel({ data }) {
-  if (!data || Object.keys(data).length === 0) {
+export default function OverviewPanel() {
+  const usersFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
+  const postsFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/posts`);
+  const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
+  const triviaFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
+
+  const isLoading = usersFetch.loading || postsFetch.loading || todosFetch.loading || triviaFetch.loading;
+
+  if (isLoading) {
     return (
-      <EmptyState
-        title="No data available"
-        message="All external APIs failed to respond. Try refreshing."
-      />
+      <div className="flex flex-col gap-6 dp-fade-in">
+        <SkeletonStatGrid count={4} />
+        <SkeletonCard rows={5} />
+      </div>
     );
   }
 
-  const topPoster = data.posts?.top5UsersByPostCount?.[0];
-  const topCompletion = getTopCompletion(data.productivity?.userCompletionStats);
-  const hardestDifficulty = getHardestDifficulty(data.trivia?.difficultyCounts);
-  const largestCountry = data.countries?.top10CountriesByPopulation?.[0];
+  // If all failed, show error
+  if (usersFetch.error && postsFetch.error && todosFetch.error && triviaFetch.error) {
+    throw new Error("All backend API requests failed. Please check network connection.");
+  }
+
+  // API returns { data: [...] } envelope; unwrap for utils that expect raw arrays
+  const users = usersFetch.data?.data ? userStats(usersFetch.data.data) : null;
+  const posts = postsFetch.data?.data ? postAnalysis(postsFetch.data.data) : null;
+  const productivity = (usersFetch.data?.data && todosFetch.data?.data)
+    ? productivityTracker(usersFetch.data.data, todosFetch.data.data)
+    : null;
+  // triviaScorer expects the full { data: [...] } envelope already
+  const trivia = triviaFetch.data ? triviaScorer(triviaFetch.data) : null;
+
+  const topPoster = posts?.top5UsersByPostCount?.[0];
+  const topCompletion = getTopCompletion(productivity?.userCompletionStats);
+  const hardestDifficulty = getHardestDifficulty(trivia?.difficultyCounts);
 
   const quickFacts = [
     topPoster && {
@@ -48,10 +67,6 @@ export default function OverviewPanel({ data }) {
       label: 'Most common difficulty',
       value: `${hardestDifficulty.difficulty} (${hardestDifficulty.count} questions)`,
     },
-    largestCountry && {
-      label: 'Largest country',
-      value: `${largestCountry.name} — ${largestCountry.population.toLocaleString()} people`,
-    },
   ].filter(Boolean);
 
   return (
@@ -59,45 +74,37 @@ export default function OverviewPanel({ data }) {
       <SectionTitle>Summary</SectionTitle>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 mb-8">
-        {data.users && (
+        {users && (
           <StatCard
             icon={Users}
             label="Total Users"
-            value={data.users.totalUsers}
+            value={users.totalUsers}
             colorKey="blue"
           />
         )}
-        {data.posts && (
+        {posts && (
           <StatCard
             icon={FileText}
             label="Total Posts"
-            value={data.posts.totalPosts}
+            value={posts.totalPosts}
             colorKey="violet"
           />
         )}
-        {data.productivity && (
+        {productivity && (
           <StatCard
             icon={CheckSquare}
             label="Users Tracked"
-            value={data.productivity.userCompletionStats.length}
+            value={productivity.userCompletionStats.length}
             colorKey="green"
             sub="Productivity stats"
           />
         )}
-        {data.trivia && (
+        {trivia && (
           <StatCard
             icon={Brain}
             label="Trivia Questions"
-            value={data.trivia.questions.length}
+            value={trivia.questions.length}
             colorKey="amber"
-          />
-        )}
-        {data.countries && (
-          <StatCard
-            icon={Globe}
-            label="Total Countries"
-            value={data.countries.totalCountries}
-            colorKey="cyan"
           />
         )}
       </div>

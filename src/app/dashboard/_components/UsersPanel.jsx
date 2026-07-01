@@ -7,10 +7,12 @@
 import { Users, Building2, Mail } from 'lucide-react';
 
 import { StatCard } from '@/components/ui';
-import { SectionTitle } from '@/components/ui';
+import { SectionTitle, SkeletonCard } from '@/components/ui';
 import { Badge } from '@/components/ui';
 import { EmptyState } from '@/components/ui';
 import { useTheme } from '@/context/ThemeContext.jsx';
+import { useFetch } from '@/hooks/useFetch';
+import { userStats } from '@/app/dashboard/_utils/userStats';
 
 /** Returns up to 2 uppercase initials from a display name */
 function getInitials(name = '') {
@@ -22,9 +24,15 @@ function getInitials(name = '') {
     .join('');
 }
 
-export default function UsersPanel({ data }) {
+export default function UsersPanel() {
   const { theme } = useTheme();
+  const { data: rawData, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
 
+  if (loading) return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
+  if (error) throw new Error(error);
+
+  // API returns { data: [...] } envelope; unwrap the raw array for userStats
+  const data = rawData?.data ? userStats(rawData.data) : null;
   if (!data) return <EmptyState title="No User Data" message="Unable to load user information." />;
 
   const uniqueCompanies = [...new Set(data.companies.map((c) => c.company).filter(Boolean))];

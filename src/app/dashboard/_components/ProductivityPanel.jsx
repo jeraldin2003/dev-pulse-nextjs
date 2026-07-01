@@ -16,8 +16,10 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-import { SectionTitle } from '@/components/ui';
+import { SectionTitle, SkeletonCard } from '@/components/ui';
 import { EmptyState } from '@/components/ui';
+import { useFetch } from '@/hooks/useFetch';
+import { productivityTracker } from '@/app/dashboard/_utils/productivityTracker';
 
 function getCompletionColor(rate) {
   if (rate >= 70) return '#10b981'; // emerald-500
@@ -46,7 +48,23 @@ function ProductivityTooltip({ active, payload }) {
   );
 }
 
-export default function ProductivityPanel({ data }) {
+export default function ProductivityPanel() {
+  const usersFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
+  const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
+
+  if (usersFetch.loading || todosFetch.loading) {
+    return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
+  }
+
+  if (usersFetch.error || todosFetch.error) {
+    throw new Error(usersFetch.error || todosFetch.error);
+  }
+
+  // API returns { data: [...] } envelopes; unwrap raw arrays for productivityTracker
+  const data = (usersFetch.data?.data && todosFetch.data?.data)
+    ? productivityTracker(usersFetch.data.data, todosFetch.data.data)
+    : null;
+
   if (!data?.userCompletionStats?.length) {
     return (
       <EmptyState title="No Productivity Data" message="Unable to fetch todos or users data." />

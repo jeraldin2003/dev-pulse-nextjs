@@ -3,8 +3,10 @@ import { FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 import { StatCard } from '@/components/ui';
-import { SectionTitle } from '@/components/ui';
+import { SectionTitle, SkeletonCard } from '@/components/ui';
 import { ErrorCard } from '@/components/ui';
+import { useFetch } from '@/hooks/useFetch';
+import { postAnalysis } from '@/app/dashboard/_utils/postAnalysis';
 
 function PostsTooltip({ active, payload }) {
   if (!active || !payload || payload.length === 0) {
@@ -21,7 +23,14 @@ function PostsTooltip({ active, payload }) {
   );
 }
 
-export default function PostsPanel({ data }) {
+export default function PostsPanel() {
+  const { data: rawData, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/posts`);
+
+  if (loading) return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
+  if (error) throw new Error(error);
+
+  // API returns { data: [...] } envelope; unwrap the raw array for postAnalysis
+  const data = rawData?.data ? postAnalysis(rawData.data) : null;
   if (!data) {
     return <ErrorCard message="Posts data is unavailable due to a failed API request." />;
   }

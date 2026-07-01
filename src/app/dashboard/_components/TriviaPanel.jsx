@@ -6,8 +6,10 @@
 "use client";
 import { useState, useMemo, useCallback } from 'react';
 import { Shuffle, Brain, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
-import { SectionTitle, EmptyState } from '@/components/ui';
+import { SectionTitle, EmptyState, SkeletonCard } from '@/components/ui';
 import { useTheme } from '@/context/ThemeContext.jsx';
+import { useFetch } from '@/hooks/useFetch';
+import { triviaScorer } from '@/app/dashboard/_utils/triviaScorer';
 
 function pickRandom(arr, count) {
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
@@ -105,10 +107,17 @@ function QuestionCard({ question, answer, category, difficulty, index }) {
   );
 }
 
-export default function TriviaPanel({ data }) {
-  const allQuestions = data?.questions ?? [];
+export default function TriviaPanel() {
+  const { data: rawData, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
   const [seed, setSeed] = useState(0);
   const { theme } = useTheme();
+
+  // triviaScorer expects the full { data: [...] } envelope from the API response
+  const data = useMemo(() => {
+    return rawData ? triviaScorer(rawData) : null;
+  }, [rawData]);
+
+  const allQuestions = data?.questions ?? [];
 
   // Re-shuffle when seed changes, maintaining stable order within a render
   const displayed = useMemo(
@@ -117,6 +126,10 @@ export default function TriviaPanel({ data }) {
     [seed, allQuestions]
   );
   const shuffle = useCallback(() => setSeed((s) => s + 1), []);
+
+  // Early returns AFTER all hooks — required by React rules of hooks
+  if (loading) return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
+  if (error) throw new Error(error);
 
   if (!allQuestions.length) {
     return (
@@ -128,6 +141,7 @@ export default function TriviaPanel({ data }) {
   }
 
   const counts = data.difficultyCounts ?? [];
+
 
   return (
     <div className="dp-fade-in">
