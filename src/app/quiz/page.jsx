@@ -12,6 +12,8 @@ import { QuizPanel } from './_components';
 import { LeaderboardPanel } from './_components';
 import { SkeletonCard } from '@/components/ui';
 import { useLeaderboard } from './_hooks/useLeaderboard.js';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from "next/navigation";
 
 const TABS = [
   { id: 'quiz', label: 'Play Quiz' },
@@ -21,7 +23,13 @@ const TABS = [
 export default function QuizPage() {
   const [activeTab, setActiveTab] = useState('quiz');
   const { top10, currentUser, loading, error, load, refresh } = useLeaderboard();
-
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
   // Load leaderboard when switching to that tab
   useEffect(() => {
     if (activeTab === 'leaderboard') load();
@@ -48,6 +56,7 @@ export default function QuizPage() {
 
     return <LeaderboardPanel top10={top10} currentUser={currentUser} />;
   }
+  
 
   return (
     <div className="flex flex-col min-h-screen pb-12">

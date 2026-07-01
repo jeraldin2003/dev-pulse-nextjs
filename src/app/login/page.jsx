@@ -19,7 +19,6 @@ export function LoginPage() {
   const { login, loginByEmail, register, sendOtp, forgotPassword, resetPassword, isAuthenticated } = useAuth();
   if (isAuthenticated) {
     redirect('/dashboard');
-    return null; // Prevent rendering the login page if already authenticated
   }
   const router = useRouter();
 
@@ -66,7 +65,7 @@ export function LoginPage() {
     setLoading(false);
 
     if (result.success) {
-      router.push('/dashboard');
+      redirect('/dashboard');
     } else {
       setError(result.error || 'Login failed');
     }
