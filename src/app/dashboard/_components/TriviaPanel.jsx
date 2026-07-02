@@ -25,9 +25,9 @@ function DifficultyBadge({ difficulty }) {
         return isLight
           ? { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
           : {
-              badge: 'bg-emerald-950/30 text-emerald-400 border-emerald-900/30',
-              dot: 'bg-emerald-400',
-            };
+            badge: 'bg-emerald-950/30 text-emerald-400 border-emerald-900/30',
+            dot: 'bg-emerald-400',
+          };
       case 'medium':
         return isLight
           ? { badge: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' }
@@ -83,15 +83,14 @@ function QuestionCard({ question, answer, category, difficulty, index }) {
       <button
         type="button"
         onClick={() => setRevealed((r) => !r)}
-        className={`w-full flex items-center justify-between gap-2 px-5 py-3 text-xs font-semibold tracking-wide transition-colors duration-150 border-t ${
-          theme === 'light'
-            ? revealed
-              ? 'border-slate-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70'
-              : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800'
-            : revealed
-              ? 'border-slate-200/40 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-950/60'
-              : 'border-slate-200/40 bg-slate-800/40 hover:bg-slate-800/70 text-slate-400 hover:text-slate-200'
-        }`}
+        className={`w-full flex items-center justify-between gap-2 px-5 py-3 text-xs font-semibold tracking-wide transition-colors duration-150 border-t ${theme === 'light'
+          ? revealed
+            ? 'border-slate-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70'
+            : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+          : revealed
+            ? 'border-slate-200/40 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-950/60'
+            : 'border-slate-200/40 bg-slate-800/40 hover:bg-slate-800/70 text-slate-400 hover:text-slate-200'
+          }`}
       >
         <span>{revealed ? 'Hide Answer' : 'Show Answer'}</span>
         {revealed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -99,8 +98,18 @@ function QuestionCard({ question, answer, category, difficulty, index }) {
 
       {/* Answer */}
       {revealed && (
-        <div className="px-5 py-3 border-t border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/60 dark:bg-emerald-950/20 dp-fade-in">
-          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{answer}</p>
+        <div
+          className={`px-5 py-3 border-t dp-fade-in ${theme === 'light'
+            ? 'border-emerald-100 bg-emerald-50/60'
+            : 'border-emerald-900/30 bg-emerald-950/20'
+            }`}
+        >
+          <p
+            className={`text-sm font-semibold ${theme === 'light' ? 'text-emerald-800' : 'text-emerald-300'
+              }`}
+          >
+            {answer}
+          </p>
         </div>
       )}
     </div>
@@ -173,23 +182,22 @@ export default function TriviaPanel() {
           {counts.map(({ difficulty, count }) => (
             <span
               key={difficulty}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${
-                theme === 'light'
-                  ? difficulty === 'easy'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : difficulty === 'medium'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : difficulty === 'hard'
-                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                        : 'bg-slate-50 text-slate-600 border-slate-200'
-                  : difficulty === 'easy'
-                    ? 'bg-emerald-950/30 text-emerald-400 border-emerald-900/30'
-                    : difficulty === 'medium'
-                      ? 'bg-amber-950/30 text-amber-400 border-amber-900/30'
-                      : difficulty === 'hard'
-                        ? 'bg-rose-950/30 text-rose-400 border-rose-900/30'
-                        : 'bg-slate-800/40 text-slate-300 border-slate-700/60'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${theme === 'light'
+                ? difficulty === 'easy'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : difficulty === 'medium'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : difficulty === 'hard'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-slate-50 text-slate-600 border-slate-200'
+                : difficulty === 'easy'
+                  ? 'bg-emerald-950/30 text-emerald-400 border-emerald-900/30'
+                  : difficulty === 'medium'
+                    ? 'bg-amber-950/30 text-amber-400 border-amber-900/30'
+                    : difficulty === 'hard'
+                      ? 'bg-rose-950/30 text-rose-400 border-rose-900/30'
+                      : 'bg-slate-800/40 text-slate-300 border-slate-700/60'
+                }`}
             >
               {count} {difficulty}
             </span>
