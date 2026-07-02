@@ -1,4 +1,3 @@
-"use client";
 import { Users, FileText, CheckSquare, Brain } from 'lucide-react';
 import { StatCard, SectionTitle, SkeletonCard } from '@/components/ui';
 import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
@@ -24,7 +23,6 @@ export default function OverviewPanel() {
   const postsFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/posts`);
   const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
   const triviaFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
-
   const isLoading = usersFetch.loading || postsFetch.loading || todosFetch.loading || triviaFetch.loading;
 
   if (isLoading) {
