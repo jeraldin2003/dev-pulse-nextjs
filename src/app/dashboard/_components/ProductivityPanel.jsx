@@ -49,6 +49,14 @@ function ProductivityTooltip({ active, payload }) {
 }
 
 export default function ProductivityPanel() {
+  // const data = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/productivity`);
+  // const {userCompletionStats} = data?.data?.data ?? {};
+  // console.log(userCompletionStats);
+
+  // return(
+  //   <>
+  //   hey</>
+  // )
   const usersFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
   const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
 
@@ -64,7 +72,7 @@ export default function ProductivityPanel() {
   const data = (usersFetch.data?.data && todosFetch.data?.data)
     ? productivityTracker(usersFetch.data.data, todosFetch.data.data)
     : null;
-
+  console.log(data);
   if (!data?.userCompletionStats?.length) {
     return (
       <EmptyState title="No Productivity Data" message="Unable to fetch todos or users data." />
@@ -72,7 +80,7 @@ export default function ProductivityPanel() {
   }
 
   // Sort descending by completion percentage
-  const chartData = [...data.userCompletionStats].sort(
+  const chartData = [userCompletionStats].sort(
     (a, b) => b.completionPercentage - a.completionPercentage
   );
 
