@@ -3,13 +3,11 @@
  * Dashboard trivia tab — shows 10 random Q&A cards from the fetched trivia data.
  * Users can click "Shuffle Questions" to pick a new random set.
  */
-"use client";
 import { useState, useMemo, useCallback } from 'react';
 import { Shuffle, Brain, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { SectionTitle, EmptyState, SkeletonCard } from '@/components/ui';
 import { useTheme } from '@/context/ThemeContext.jsx';
 import { useFetch } from '@/hooks/useFetch';
-import { triviaScorer } from '@/app/dashboard/_utils/triviaScorer';
 
 function pickRandom(arr, count) {
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
@@ -117,16 +115,11 @@ function QuestionCard({ question, answer, category, difficulty, index }) {
 }
 
 export default function TriviaPanel() {
-  const { data: rawData, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
+  const {data , loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
   const [seed, setSeed] = useState(0);
   const { theme } = useTheme();
 
-  // triviaScorer expects the full { data: [...] } envelope from the API response
-  const data = useMemo(() => {
-    return rawData ? triviaScorer(rawData) : null;
-  }, [rawData]);
-
-  const allQuestions = data?.questions ?? [];
+  const allQuestions = data?.data?.questions ?? [];
 
   // Re-shuffle when seed changes, maintaining stable order within a render
   const displayed = useMemo(
