@@ -1,12 +1,7 @@
 /**
  * useQuiz.js
  * State machine for the trivia quiz game.
- * States: 'selection' → 'loading' → 'playing' → 'finished'
- *
- * Responsible for:
- * - Fetching questions from Open Trivia DB
- * - Tracking the current question index, score, and timer
- * - Persisting the final score to the backend via saveQuizScore
+ * phase: 'setup' -> 'loading' -> 'playing' -> 'done'
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -16,207 +11,139 @@ import { decodeHtmlEntities } from '@/utils/htmlSanitize.js';
 
 const QUESTION_COUNT = 10;
 const SECONDS_PER_Q = 30;
-const TRIVIA_API_BASE = 'https://opentdb.com/api.php';
+const FEEDBACK_MS = 700;
+const TRIVIA_API = 'https://opentdb.com/api.php';
 
-/**
- * @returns {{
- *   quizState:            'selection' | 'loading' | 'playing' | 'finished',
- *   difficulty:           string,
- *   questions:            Array,
- *   currentQuestion:      object | null,
- *   currentIndex:         number,
- *   score:                number,
- *   timeLeft:             number,
- *   selectedAnswer:       string | null,
- *   isCorrect:            boolean | null,
- *   error:                string | null,
- *   startQuiz:            (difficulty: string) => void,
- *   handleAnswer:         (option: string) => void,
- *   resetQuiz:            () => void,
- * }}
- */
 export function useQuiz() {
   const { user } = useAuth();
 
-  const [quizState, setQuizState] = useState('selection');
-  const [difficulty, setDifficulty] = useState('');
+  const [phase, setPhase] = useState('setup');
   const [questions, setQuestions] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_Q);
-  const [selectedAnswer, setSelectedAnswer] = useState(null); // the option the user clicked
-  const [isCorrect, setIsCorrect] = useState(null); // feedback phase
+  const [selected, setSelected] = useState(null);
   const [error, setError] = useState(null);
 
-  const timerRef = useRef(null);
-  const scoreFinalRef = useRef(0); // stable ref so the finished-state save gets the right value
+  const timerId = useRef(null);
+  const feedbackId = useRef(null);
 
-  // ─── Timer ──────────────────────────────────────────────────────────────────
-
-  const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+  const clearTimers = useCallback(() => {
+    clearInterval(timerId.current);
+    clearTimeout(feedbackId.current);
   }, []);
 
+  useEffect(() => clearTimers, [clearTimers]);
+
   const startTimer = useCallback(() => {
-    stopTimer();
+    clearInterval(timerId.current);
     setTimeLeft(SECONDS_PER_Q);
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Time's up — auto-advance without scoring
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-          return 0;
-        }
-        return prev - 1;
-      });
+    timerId.current = setInterval(() => {
+      setTimeLeft((t) => (t <= 1 ? 0 : t - 1));
     }, 1000);
-  }, [stopTimer]);
+  }, []);
 
-  // Auto-advance when timer hits 0 during the playing state
-  useEffect(() => {
-    if (quizState !== 'playing' || timeLeft !== 0 || selectedAnswer !== null) return;
-    advanceQuestion(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, quizState, selectedAnswer]);
-
-  // Cleanup on unmount
-  useEffect(() => () => stopTimer(), [stopTimer]);
-
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-  function advanceQuestion(withFeedbackDelay) {
-    const advance = () => {
-      setSelectedAnswer(null);
-      setIsCorrect(null);
-
-      setCurrentIndex((prevIdx) => {
-        const nextIdx = prevIdx + 1;
-        if (nextIdx >= QUESTION_COUNT) {
-          setQuizState('finished');
-          stopTimer();
-          // Persist score — best-effort, never block UI
-          saveQuizScore(scoreFinalRef.current, user).catch(() => {});
+  // Move to the next question, or finish the quiz.
+  const advance = useCallback(
+    (finalScore) => {
+      setSelected(null);
+      setIndex((i) => {
+        const nextIndex = i + 1;
+        if (nextIndex >= QUESTION_COUNT) {
+          clearInterval(timerId.current);
+          setPhase('done');
+          saveQuizScore(finalScore, user).catch(() => {});
         } else {
           startTimer();
         }
-        return nextIdx;
+        return nextIndex;
       });
-    };
+    },
+    [startTimer, user]
+  );
 
-    if (withFeedbackDelay) {
-      // Show correct/wrong feedback for 800 ms before advancing
-      setTimeout(advance, 800);
-    } else {
-      advance();
-    }
-  }
-
-  // ─── Public API ──────────────────────────────────────────────────────────────
+  // Time ran out on the current question — auto-advance, no points.
+  useEffect(() => {
+    if (phase !== 'playing' || timeLeft > 0 || selected) return;
+    advance(score);
+  }, [timeLeft, phase, selected, score, advance]);
 
   const startQuiz = useCallback(
-    async (selectedDifficulty) => {
-      setDifficulty(selectedDifficulty);
+    async (difficulty) => {
+      clearTimers();
       setError(null);
+      setPhase('loading');
       setScore(0);
-      scoreFinalRef.current = 0;
-      setCurrentIndex(0);
-      setSelectedAnswer(null);
-      setIsCorrect(null);
-      setQuizState('loading');
-      stopTimer();
+      setIndex(0);
+      setSelected(null);
 
       try {
-        let url = `${TRIVIA_API_BASE}?amount=${QUESTION_COUNT}&type=multiple`;
-        if (selectedDifficulty !== 'random') url += `&difficulty=${selectedDifficulty}`;
+        const url = new URL(TRIVIA_API);
+        url.searchParams.set('amount', QUESTION_COUNT);
+        url.searchParams.set('type', 'multiple');
+        if (difficulty !== 'random') url.searchParams.set('difficulty', difficulty);
 
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch questions from Open Trivia DB.');
+        if (!res.ok) throw new Error('Failed to fetch questions.');
 
-        const json = await res.json();
+        const { results } = await res.json();
+        if (!results?.length) throw new Error('No questions returned. Please try again.');
 
-        if (!json.results?.length) throw new Error('No questions returned. Please try again.');
-
-        const formatted = json.results.map((q) => {
-          // Decode HTML entities in question text and all answer options
-          const options = [
-            ...q.incorrect_answers.map(decodeHtmlEntities),
-            decodeHtmlEntities(q.correct_answer),
-          ].sort(() => Math.random() - 0.5);
-
-          return {
+        setQuestions(
+          results.map((q) => ({
             question: decodeHtmlEntities(q.question),
             correct_answer: decodeHtmlEntities(q.correct_answer),
             category: q.category,
             difficulty: q.difficulty,
-            options,
-          };
-        });
-
-        setQuestions(formatted);
-        setQuizState('playing');
+            options: [...q.incorrect_answers.map(decodeHtmlEntities), decodeHtmlEntities(q.correct_answer)].sort(
+              () => Math.random() - 0.5
+            ),
+          }))
+        );
+        setPhase('playing');
         startTimer();
       } catch (err) {
         setError(err.message ?? 'Something went wrong. Please try again.');
-        setQuizState('selection');
+        setPhase('setup');
       }
     },
-    [stopTimer, startTimer]
+    [clearTimers, startTimer]
   );
 
   const handleAnswer = useCallback(
     (option) => {
-      if (selectedAnswer !== null) return; // ignore double-clicks
+      if (selected) return;
+      clearInterval(timerId.current);
+      setSelected(option);
 
-      stopTimer();
-      setSelectedAnswer(option);
+      const correct = option === questions[index]?.correct_answer;
+      const finalScore = correct ? score + 1 : score;
+      if (correct) setScore(finalScore);
 
-      const correct = option === questions[currentIndex]?.correct_answer;
-      setIsCorrect(correct);
-
-      if (correct) {
-        setScore((prev) => {
-          const next = prev + 1;
-          scoreFinalRef.current = next;
-          return next;
-        });
-      }
-
-      advanceQuestion(true);
+      feedbackId.current = setTimeout(() => advance(finalScore), FEEDBACK_MS);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedAnswer, questions, currentIndex, stopTimer]
+    [selected, questions, index, score, advance]
   );
 
   const resetQuiz = useCallback(() => {
-    stopTimer();
-    setQuizState('selection');
-    setDifficulty('');
+    clearTimers();
+    setPhase('setup');
     setQuestions([]);
-    setCurrentIndex(0);
+    setIndex(0);
     setScore(0);
-    scoreFinalRef.current = 0;
     setTimeLeft(SECONDS_PER_Q);
-    setSelectedAnswer(null);
-    setIsCorrect(null);
+    setSelected(null);
     setError(null);
-  }, [stopTimer]);
-
-  const currentQuestion = questions[currentIndex] ?? null;
+  }, [clearTimers]);
 
   return {
-    quizState,
-    difficulty,
+    phase,
     questions,
-    currentQuestion,
-    currentIndex,
+    currentQuestion: questions[index] ?? null,
+    index,
     score,
     timeLeft,
-    selectedAnswer,
-    isCorrect,
+    selected,
     error,
     startQuiz,
     handleAnswer,

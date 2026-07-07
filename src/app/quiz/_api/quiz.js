@@ -16,8 +16,6 @@ function authHeaders() {
 
 /**
  * Save a completed quiz score to the backend.
- * @param {number} score
- * @param {object} user - Current user object from AuthContext.
  * @returns {Promise<{ success: boolean, data?: any, error?: string }>}
  */
 export async function saveQuizScore(score, user) {
@@ -29,12 +27,7 @@ export async function saveQuizScore(score, user) {
     });
 
     const json = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      const message = json?.error ?? json?.message ?? `HTTP ${res.status}`;
-      return { success: false, error: message };
-    }
-
+    if (!res.ok) return { success: false, error: json?.error ?? json?.message ?? `HTTP ${res.status}` };
     return { success: true, data: json };
   } catch (error) {
     return { success: false, error: error?.message ?? 'Failed to save score.' };
@@ -43,27 +36,17 @@ export async function saveQuizScore(score, user) {
 
 /**
  * Fetch the global leaderboard and the current user's standing.
- * @param {object} user - Current user object from AuthContext.
  * @returns {Promise<{ success: boolean, data?: { top10: Array, currentUser: object|null }, error?: string }>}
  */
 export async function fetchLeaderboard(user) {
   try {
-    const username = user?.username ?? '';
     const url = new URL(`${API_BASE}/games/leaderboard`, window.location.origin);
-    url.searchParams.set('username', username);
+    url.searchParams.set('username', user?.username ?? '');
 
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: authHeaders(),
-    });
+    const res = await fetch(url, { headers: authHeaders() });
 
     const json = await res.json().catch(() => null);
-
-    if (!res.ok) {
-      const message = json?.error ?? json?.message ?? `HTTP ${res.status}`;
-      return { success: false, error: message };
-    }
-
+    if (!res.ok) return { success: false, error: json?.error ?? json?.message ?? `HTTP ${res.status}` };
     return { success: true, data: json?.data ?? json };
   } catch (error) {
     return { success: false, error: error?.message ?? 'Failed to fetch leaderboard.' };
