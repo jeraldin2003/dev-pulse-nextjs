@@ -84,27 +84,3 @@ export async function apiRefreshToken(refreshToken) {
 export async function apiLogout(refreshToken) {
   return authPost('/auth/logout', { refreshToken });
 }
-
-/** Fetch the authenticated user's profile */
-export async function apiFetchProfile(accessToken) {
-  try {
-    const res = await fetch(`${API_BASE}/users/profile`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    let json;
-    try {
-      json = await res.json();
-    } catch {
-      return { success: false, error: `Server returned non-JSON response (${res.status})` };
-    }
-
-    if (!res.ok) {
-      return { success: false, error: json?.error ?? json?.message ?? `Status ${res.status}` };
-    }
-
-    return json;
-  } catch (err) {
-    return { success: false, error: err?.message ?? 'Network error.' };
-  }
-}

@@ -66,14 +66,10 @@ function isJwtExpired(token) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
-  const [refreshToken, setRefreshToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Keep a ref to the latest refreshToken so callbacks don't stale-close over it.
-  const refreshTokenRef = useRef(refreshToken);
-  useEffect(() => {
-    refreshTokenRef.current = refreshToken;
-  }, [refreshToken]);
+  // Refresh token is only ever needed inside callbacks (restore/logout), never
+  // rendered — a ref avoids an extra state slot and its sync effect.
+  const refreshTokenRef = useRef(null);
 
   // ─── Session helpers ─────────────────────────────────────────────────────
 
@@ -81,8 +77,8 @@ export function AuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, access);
     localStorage.setItem(REFRESH_KEY, refresh);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    refreshTokenRef.current = refresh;
     setAccessToken(access);
-    setRefreshToken(refresh);
     setUser(userData);
   }, []);
 
@@ -90,32 +86,10 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
+    refreshTokenRef.current = null;
     setAccessToken(null);
-    setRefreshToken(null);
     setUser(null);
   }, []);
-
-  // ─── Token refresh ───────────────────────────────────────────────────────
-
-  const refresh = useCallback(async () => {
-    const currentRefresh = refreshTokenRef.current;
-    if (!currentRefresh) return false;
-    try {
-      const result = await apiRefreshToken(currentRefresh);
-      if (result.success) {
-        localStorage.setItem(TOKEN_KEY, result.data.accessToken);
-        localStorage.setItem(REFRESH_KEY, result.data.refreshToken);
-        setAccessToken(result.data.accessToken);
-        setRefreshToken(result.data.refreshToken);
-        return true;
-      }
-      clearSession();
-      return false;
-    } catch {
-      clearSession();
-      return false;
-    }
-  }, [clearSession]);
 
   // ─── Restore session on mount ────────────────────────────────────────────
 
@@ -125,47 +99,35 @@ export function AuthProvider({ children }) {
       const storedRefresh = localStorage.getItem(REFRESH_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
 
-      if (!storedAccess || !storedRefresh || !storedUser) {
-        setIsLoading(false);
-        return;
-      }
+      if (!storedAccess || !storedRefresh || !storedUser) return;
 
       let parsedUser;
       try {
         parsedUser = JSON.parse(storedUser);
       } catch {
         clearSession();
-        setIsLoading(false);
         return;
       }
 
       // If the access token is still valid, restore immediately.
       if (!isJwtExpired(storedAccess)) {
+        refreshTokenRef.current = storedRefresh;
         setAccessToken(storedAccess);
-        setRefreshToken(storedRefresh);
         setUser(parsedUser);
-        setIsLoading(false);
         return;
       }
 
       // Access token is expired — attempt a silent refresh before giving up.
-      refreshTokenRef.current = storedRefresh;
       const result = await apiRefreshToken(storedRefresh);
       if (result.success) {
-        localStorage.setItem(TOKEN_KEY, result.data.accessToken);
-        localStorage.setItem(REFRESH_KEY, result.data.refreshToken);
-        setAccessToken(result.data.accessToken);
-        setRefreshToken(result.data.refreshToken);
-        setUser(parsedUser);
+        persistSession(result.data.accessToken, result.data.refreshToken, parsedUser);
       } else {
         clearSession();
       }
-
-      setIsLoading(false);
     }
 
     restoreSession();
-  }, [clearSession]);
+  }, [clearSession, persistSession]);
 
   // ─── Auth operations ─────────────────────────────────────────────────────
 
@@ -220,10 +182,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
-    accessToken,
-    refreshToken,
     isAuthenticated: !!accessToken && !!user,
-    isLoading,
     login,
     loginByEmail,
     sendOtp,
@@ -231,7 +190,6 @@ export function AuthProvider({ children }) {
     forgotPassword,
     resetPassword,
     logout,
-    refresh,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
