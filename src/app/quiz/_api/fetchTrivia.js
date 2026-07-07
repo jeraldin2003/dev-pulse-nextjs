@@ -1,4 +1,4 @@
-const TRIVIA_URL = `${import.meta.env.VITE_API_URL}/dashboard/trivia`;
+const TRIVIA_URL = `${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`;
 
 export async function fetchTrivia() {
   try {

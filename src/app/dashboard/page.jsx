@@ -13,12 +13,12 @@ import { redirect } from 'next/navigation';
 import { ErrorBoundary } from '@/components/layout';
 // SkeletonStatGrid does not exist in ui barrel
 import {
-    OverviewPanel,
-    UsersPanel,
-    PostsPanel,
-    ProductivityPanel,
-    TriviaPanel,
-  } from '@/app/dashboard/_components';
+  OverviewPanel,
+  UsersPanel,
+  PostsPanel,
+  ProductivityPanel,
+  TriviaPanel,
+} from '@/app/dashboard/_components';
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },
@@ -27,14 +27,6 @@ const TABS = [
   { id: 'trivia', label: 'Trivia' },
 ];
 
-function DashboardSkeleton() {
-  return (
-    <div className="flex flex-col gap-6 dp-fade-in">
-      <SkeletonStatGrid count={4} />
-      <SkeletonCard rows={5} />
-    </div>
-  );
-}
 
 function ActivePanel({ tabId }) {
   switch (tabId) {
@@ -76,8 +68,8 @@ function ActivePanel({ tabId }) {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshKey, setRefreshKey] = useState(0);
-  const {isAuthenticated} = useAuth();  
-  if(!isAuthenticated){
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
     redirect("/login")
   }
 

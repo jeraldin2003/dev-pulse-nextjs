@@ -3,7 +3,6 @@
  * Shows completion rate bar chart.
  * Sorted descending by completion rate, adds a 70% goal line.
  */
-"use client";
 import {
   BarChart,
   Bar,
@@ -19,7 +18,6 @@ import {
 import { SectionTitle, SkeletonCard } from '@/components/ui';
 import { EmptyState } from '@/components/ui';
 import { useFetch } from '@/hooks/useFetch';
-import { productivityTracker } from '@/app/dashboard/_utils/productivityTracker';
 
 function getCompletionColor(rate) {
   if (rate >= 70) return '#10b981'; // emerald-500
@@ -49,33 +47,26 @@ function ProductivityTooltip({ active, payload }) {
 }
 
 export default function ProductivityPanel() {
-  const usersFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
-  const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
-
-  if (usersFetch.loading || todosFetch.loading) {
+  const data = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/productivity`);
+  if (data.loading) {
     return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
   }
-
-  if (usersFetch.error || todosFetch.error) {
-    throw new Error(usersFetch.error || todosFetch.error);
+  const userCompletionStats = data?.data?.data?.userCompletionStats ?? [];
+  if (data.error) {
+    throw new Error(data.error);
   }
 
-  // API returns { data: [...] } envelopes; unwrap raw arrays for productivityTracker
-  const data = (usersFetch.data?.data && todosFetch.data?.data)
-    ? productivityTracker(usersFetch.data.data, todosFetch.data.data)
-    : null;
 
-  if (!data?.userCompletionStats?.length) {
+  if (!userCompletionStats?.length) {
     return (
       <EmptyState title="No Productivity Data" message="Unable to fetch todos or users data." />
     );
   }
 
   // Sort descending by completion percentage
-  const chartData = [...data.userCompletionStats].sort(
+  const chartData = userCompletionStats.sort(
     (a, b) => b.completionPercentage - a.completionPercentage
   );
-
   const avgCompletion = Math.round(
     chartData.reduce((sum, u) => sum + u.completionPercentage, 0) / chartData.length
   );

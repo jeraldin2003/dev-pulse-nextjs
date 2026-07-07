@@ -3,16 +3,11 @@
  * Shows user statistics and the .biz users list.
  * Fixed to match new data structure from userStats module.
  */
-"use client";
 import { Users, Building2, Mail } from 'lucide-react';
 
-import { StatCard } from '@/components/ui';
-import { SectionTitle, SkeletonCard } from '@/components/ui';
-import { Badge } from '@/components/ui';
-import { EmptyState } from '@/components/ui';
+import { SectionTitle, SkeletonCard, Badge, EmptyState, StatCard  } from '@/components/ui';
 import { useTheme } from '@/context/ThemeContext.jsx';
 import { useFetch } from '@/hooks/useFetch';
-import { userStats } from '@/app/dashboard/_utils/userStats';
 
 /** Returns up to 2 uppercase initials from a display name */
 function getInitials(name = '') {
@@ -26,16 +21,17 @@ function getInitials(name = '') {
 
 export default function UsersPanel() {
   const { theme } = useTheme();
-  const { data: rawData, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
+  const { data, loading, error } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
+
+  
+  const {bizUsers, companies, totalCompanies, totalUsers, uniqueCompanies} = data?.data?? {};
 
   if (loading) return <div className="dp-fade-in"><SkeletonCard rows={6} /></div>;
   if (error) throw new Error(error);
 
   // API returns { data: [...] } envelope; unwrap the raw array for userStats
-  const data = rawData?.data ? userStats(rawData.data) : null;
+  console.log('Raw API data:', data?.data);
   if (!data) return <EmptyState title="No User Data" message="Unable to load user information." />;
-
-  const uniqueCompanies = [...new Set(data.companies.map((c) => c.company).filter(Boolean))];
 
   return (
     <div className="dp-fade-in flex flex-col gap-6">
@@ -43,11 +39,11 @@ export default function UsersPanel() {
       <div>
         <SectionTitle>User Statistics</SectionTitle>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-          <StatCard icon={Users} label="Total Users" value={data.totalUsers} colorKey="blue" />
+          <StatCard icon={Users} label="Total Users" value={totalUsers} colorKey="blue" />
           <StatCard
             icon={Building2}
             label="Unique Companies"
-            value={data.totalCompanies}
+            value={totalCompanies}
             colorKey="violet"
           />
         </div>
@@ -81,17 +77,17 @@ export default function UsersPanel() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <SectionTitle>.biz Domain Users</SectionTitle>
-          <Badge color="#3b82f6">{data.bizUsers.length} Found</Badge>
+          <Badge color="#3b82f6">{bizUsers.length} Found</Badge>
         </div>
 
-        {data.bizUsers.length === 0 ? (
+        {bizUsers.length === 0 ? (
           <EmptyState
             title="No .biz Users"
             message="No users with a .biz email domain were found."
           />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-            {data.bizUsers.map((user) => (
+            {bizUsers.map((user) => (
               <div
                 key={user.id}
                 className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200"

@@ -1,5 +1,6 @@
 // src/hooks/useFetch.js
 import { useState, useEffect, useRef } from 'react';
+import { refreshAccessToken } from '../lib/auth';
 
 export function useFetch(url) {
     const [data, setData] = useState(null);
@@ -13,23 +14,44 @@ export function useFetch(url) {
         abortRef.current = controller;
         setLoading(true);
         setError(null);
-        
-        fetch(url, { signal: controller.signal })
-            .then(res => {
+
+        const doFetch = async (retried = false) => {
+            const accessToken = localStorage.getItem('devpulse_access_token');
+
+            try {
+                const res = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                    },
+                });
+
+                if (res.status === 403 && !retried) {
+                    try {
+                        await refreshAccessToken(); // stores new access token in localStorage
+                        return doFetch(true); // retry once with the new token
+                    } catch {
+                        localStorage.removeItem('devpulse_access_token');
+                        localStorage.removeItem('devpulse_refresh_token');
+                        window.location.href = '/login';
+                        return;
+                    }
+                }
+
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then(json => {
+
+                const json = await res.json();
                 setData(json);
                 setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 if (err.name === 'AbortError') return; // cleanup, not an error
                 setError(err.message);
                 setLoading(false);
-            });
-            
-        // Cleanup: cancel in-flight request on unmount or url change
+            }
+        };
+
+        doFetch();
+
         return () => controller.abort();
     }, [url]);
 

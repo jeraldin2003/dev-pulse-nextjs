@@ -1,10 +1,18 @@
 /**
  * quiz.js
  * API functions for the quiz/game feature.
- * Uses the centralised apiClient so tokens and retries are handled automatically.
+ * Uses plain fetch with the access token read from localStorage.
  */
 
-import apiClient from '@/lib/apiClient.js';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+
+function authHeaders() {
+  const accessToken = localStorage.getItem('devpulse_access_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  };
+}
 
 /**
  * Save a completed quiz score to the backend.
@@ -14,15 +22,22 @@ import apiClient from '@/lib/apiClient.js';
  */
 export async function saveQuizScore(score, user) {
   try {
-    const res = await apiClient.post('/games', { score, user });
-    return { success: true, data: res.data };
+    const res = await fetch(`${API_BASE}/games`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ score, user }),
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message = json?.error ?? json?.message ?? `HTTP ${res.status}`;
+      return { success: false, error: message };
+    }
+
+    return { success: true, data: json };
   } catch (error) {
-    const message =
-      error?.response?.data?.error ??
-      error?.response?.data?.message ??
-      error?.message ??
-      'Failed to save score.';
-    return { success: false, error: message };
+    return { success: false, error: error?.message ?? 'Failed to save score.' };
   }
 }
 
@@ -34,16 +49,23 @@ export async function saveQuizScore(score, user) {
 export async function fetchLeaderboard(user) {
   try {
     const username = user?.username ?? '';
-    const res = await apiClient.get('/games/leaderboard', {
-      params: { username },
+    const url = new URL(`${API_BASE}/games/leaderboard`, window.location.origin);
+    url.searchParams.set('username', username);
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: authHeaders(),
     });
-    return { success: true, data: res.data?.data ?? res.data };
+
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message = json?.error ?? json?.message ?? `HTTP ${res.status}`;
+      return { success: false, error: message };
+    }
+
+    return { success: true, data: json?.data ?? json };
   } catch (error) {
-    const message =
-      error?.response?.data?.error ??
-      error?.response?.data?.message ??
-      error?.message ??
-      'Failed to fetch leaderboard.';
-    return { success: false, error: message };
+    return { success: false, error: error?.message ?? 'Failed to fetch leaderboard.' };
   }
 }

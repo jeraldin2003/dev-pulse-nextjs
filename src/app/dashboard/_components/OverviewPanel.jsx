@@ -1,31 +1,13 @@
-"use client";
 import { Users, FileText, CheckSquare, Brain } from 'lucide-react';
 import { StatCard, SectionTitle, SkeletonCard } from '@/components/ui';
 import { SkeletonStatGrid } from '@/components/ui/SkeletonCard';
 import { useFetch } from '@/hooks/useFetch';
-import { userStats } from '@/app/dashboard/_utils/userStats.js';
-import { postAnalysis } from '@/app/dashboard/_utils/postAnalysis.js';
-import { productivityTracker } from '@/app/dashboard/_utils/productivityTracker.js';
-import { triviaScorer } from '@/app/dashboard/_utils/triviaScorer.js';
-
-function getTopCompletion(stats = []) {
-  return stats.reduce(
-    (top, cur) => (cur.completionPercentage > (top?.completionPercentage ?? -1) ? cur : top),
-    null
-  );
-}
-
-function getHardestDifficulty(counts = []) {
-  return counts.reduce((top, cur) => (cur.count > (top?.count ?? -1) ? cur : top), null);
-}
 
 export default function OverviewPanel() {
-  const usersFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/users`);
-  const postsFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/posts`);
-  const todosFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/todos`);
-  const triviaFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/trivia`);
+  const overviewFetch = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/overview`);
+  const {mostPostsUser, mostProductiveUser, mostRepeatedDifficulty, postsCount, usersCount, todosCount, triviaCount} = overviewFetch.data?.data || {};
 
-  const isLoading = usersFetch.loading || postsFetch.loading || todosFetch.loading || triviaFetch.loading;
+  const isLoading = overviewFetch.loading;
 
   if (isLoading) {
     return (
@@ -33,39 +15,26 @@ export default function OverviewPanel() {
         <SkeletonStatGrid count={4} />
         <SkeletonCard rows={5} />
       </div>
-    );
+    );  
   }
 
   // If all failed, show error
-  if (usersFetch.error && postsFetch.error && todosFetch.error && triviaFetch.error) {
-    throw new Error("All backend API requests failed. Please check network connection.");
-  }
-
-  // API returns { data: [...] } envelope; unwrap for utils that expect raw arrays
-  const users = usersFetch.data?.data ? userStats(usersFetch.data.data) : null;
-  const posts = postsFetch.data?.data ? postAnalysis(postsFetch.data.data) : null;
-  const productivity = (usersFetch.data?.data && todosFetch.data?.data)
-    ? productivityTracker(usersFetch.data.data, todosFetch.data.data)
-    : null;
-  // triviaScorer expects the full { data: [...] } envelope already
-  const trivia = triviaFetch.data ? triviaScorer(triviaFetch.data) : null;
-
-  const topPoster = posts?.top5UsersByPostCount?.[0];
-  const topCompletion = getTopCompletion(productivity?.userCompletionStats);
-  const hardestDifficulty = getHardestDifficulty(trivia?.difficultyCounts);
+  // if (overviewFetch.error) {
+  //   throw new Error("All backend API requests failed. Please check network connection.");
+  // }
 
   const quickFacts = [
-    topPoster && {
+    mostPostsUser && {
       label: 'Top poster',
-      value: `User ${topPoster.userId} — ${topPoster.postCount} posts`,
+      value: `User ${mostPostsUser.userId} — ${mostPostsUser.posts} posts`,
     },
-    topCompletion && {
+    mostProductiveUser && {
       label: 'Highest completion',
-      value: `${topCompletion.userName} (${topCompletion.completionPercentage}%)`,
+      value: `${mostProductiveUser.user} (${mostProductiveUser.completionRate}%)`,
     },
-    hardestDifficulty && {
+    mostRepeatedDifficulty && {
       label: 'Most common difficulty',
-      value: `${hardestDifficulty.difficulty} (${hardestDifficulty.count} questions)`,
+      value: `${mostRepeatedDifficulty.difficulty} (${mostRepeatedDifficulty.count} questions)`,
     },
   ].filter(Boolean);
 
@@ -74,36 +43,36 @@ export default function OverviewPanel() {
       <SectionTitle>Summary</SectionTitle>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 mb-8">
-        {users && (
+        {usersCount && (
           <StatCard
             icon={Users}
             label="Total Users"
-            value={users.totalUsers}
+            value={usersCount}
             colorKey="blue"
           />
         )}
-        {posts && (
+        {postsCount && (
           <StatCard
             icon={FileText}
             label="Total Posts"
-            value={posts.totalPosts}
+            value={postsCount}
             colorKey="violet"
           />
         )}
-        {productivity && (
+        {todosCount && (
           <StatCard
             icon={CheckSquare}
             label="Users Tracked"
-            value={productivity.userCompletionStats.length}
+            value={todosCount}
             colorKey="green"
             sub="Productivity stats"
           />
         )}
-        {trivia && (
+        {triviaCount && (
           <StatCard
             icon={Brain}
             label="Trivia Questions"
-            value={trivia.questions.length}
+            value={triviaCount}
             colorKey="amber"
           />
         )}
