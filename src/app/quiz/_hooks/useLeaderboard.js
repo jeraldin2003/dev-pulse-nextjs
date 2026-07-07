@@ -7,18 +7,8 @@ import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { fetchLeaderboard } from '../_api/quiz.js';
 
-const CACHE_TTL_MS = 60_000; // 1 minute
+const CACHE_TTL_MS = 60_000;
 
-/**
- * @returns {{
- *   top10:       Array,
- *   currentUser: object | null,
- *   loading:     boolean,
- *   error:       string | null,
- *   load:        () => Promise<void>,
- *   refresh:     () => Promise<void>,
- * }}
- */
 export function useLeaderboard() {
   const { user } = useAuth();
 
@@ -30,16 +20,11 @@ export function useLeaderboard() {
   const cacheRef = useRef(null); // { data: { top10, currentUser }, cachedAt }
 
   const fetchData = useCallback(
-    async (forceRefresh = false) => {
-      // Return cached data if still fresh
-      if (
-        !forceRefresh &&
-        cacheRef.current &&
-        Date.now() - cacheRef.current.cachedAt < CACHE_TTL_MS
-      ) {
-        const { top10: t, currentUser: cu } = cacheRef.current.data;
-        setTop10(t);
-        setCurrentUser(cu);
+    async (forceRefresh) => {
+      const cache = cacheRef.current;
+      if (!forceRefresh && cache && Date.now() - cache.cachedAt < CACHE_TTL_MS) {
+        setTop10(cache.data.top10);
+        setCurrentUser(cache.data.currentUser);
         return;
       }
 
@@ -49,12 +34,10 @@ export function useLeaderboard() {
       const result = await fetchLeaderboard(user);
 
       if (result.success) {
-        const t = result.data?.top10 ?? [];
-        const cu = result.data?.currentUser ?? null;
-
-        cacheRef.current = { data: { top10: t, currentUser: cu }, cachedAt: Date.now() };
-        setTop10(t);
-        setCurrentUser(cu);
+        const data = { top10: result.data?.top10 ?? [], currentUser: result.data?.currentUser ?? null };
+        cacheRef.current = { data, cachedAt: Date.now() };
+        setTop10(data.top10);
+        setCurrentUser(data.currentUser);
       } else {
         setError(result.error ?? 'Failed to load leaderboard.');
       }
@@ -64,8 +47,12 @@ export function useLeaderboard() {
     [user]
   );
 
-  const load = useCallback(() => fetchData(false), [fetchData]);
-  const refresh = useCallback(() => fetchData(true), [fetchData]);
-
-  return { top10, currentUser, loading, error, load, refresh };
+  return {
+    top10,
+    currentUser,
+    loading,
+    error,
+    load: useCallback(() => fetchData(false), [fetchData]),
+    refresh: useCallback(() => fetchData(true), [fetchData]),
+  };
 }
