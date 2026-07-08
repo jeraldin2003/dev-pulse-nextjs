@@ -75,11 +75,6 @@ export async function apiResetPassword(email, otp, newPassword) {
   return authPost('/auth/reset-password', { email, otp, newPassword });
 }
 
-/** Exchange a refresh token for a new access + refresh token pair */
-export async function apiRefreshToken(refreshToken) {
-  return authPost('/auth/refresh', { refreshToken });
-}
-
 /** Invalidate a refresh token (server-side logout) */
 export async function apiLogout(refreshToken) {
   return authPost('/auth/logout', { refreshToken });

@@ -18,11 +18,11 @@ import {
   apiRegister,
   apiSendOtp,
   apiLogout,
-  apiRefreshToken,
   apiForgotPassword,
   apiResetPassword,
 } from './auth.js';
 
+import {refreshAccessToken} from '@/lib/auth.js';
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = 'devpulse_access_token';
@@ -118,7 +118,7 @@ export function AuthProvider({ children }) {
       }
 
       // Access token is expired — attempt a silent refresh before giving up.
-      const result = await apiRefreshToken(storedRefresh);
+      const result = await refreshAccessToken();
       if (result.success) {
         persistSession(result.data.accessToken, result.data.refreshToken, parsedUser);
       } else {

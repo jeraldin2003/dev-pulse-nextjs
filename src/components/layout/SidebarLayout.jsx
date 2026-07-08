@@ -12,7 +12,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, HelpCircle, LogOut, Activity, Menu, X, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
 import { useTheme } from '@/context/ThemeContext.jsx';
-
+import { useRouter } from 'next/navigation';
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/quiz', label: 'Quiz', icon: HelpCircle },
