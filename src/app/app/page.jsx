@@ -1,6 +1,4 @@
-import { useRouter } from 'next/navigation';
-
+import {redirect } from 'next/navigation';
 export default function AppLayout() {
-  const router = useRouter();
-  router.replace('/app/dashboard');
+  redirect  ('/app/dashboard');
 }
