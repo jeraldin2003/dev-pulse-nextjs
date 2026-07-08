@@ -14,9 +14,9 @@ import { useAuth } from '@/context/AuthContext.jsx';
 import { useTheme } from '@/context/ThemeContext.jsx';
 import { useRouter } from 'next/navigation';
 const NAV_LINKS = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/quiz', label: 'Quiz', icon: HelpCircle },
-  { to: '/contact', label: 'Contact', icon: Activity },
+  { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/app/quiz', label: 'Quiz', icon: HelpCircle },
+  { to: '/app/contact', label: 'Contact', icon: Activity },
 ];
 
 /** Returns up to 2 uppercase initials from a display name */
@@ -152,7 +152,8 @@ function SidebarContent({ user, logout, onClose }) {
 }
 
 export default function SidebarLayout({ children }) {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 

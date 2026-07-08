@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { Activity, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext.jsx';
@@ -8,6 +8,7 @@ import { RegisterForm } from './_components/RegisterForm.jsx';
 import { ForgotPasswordForm } from './_components/ForgotPasswordForm.jsx';
 import { ErrorBanner } from '@/components/ui/ErrorBanner.jsx';
 import { useTheme } from '@/context/ThemeContext.jsx';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner.jsx';
 
 export function LoginPage() {
   const [view, setView] = useState('login'); // 'login' | 'register' | 'forgot'
@@ -15,11 +16,8 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  
-  const { login, loginByEmail, register, sendOtp, forgotPassword, resetPassword, isAuthenticated } = useAuth();
-  if (isAuthenticated) {
-    redirect('/dashboard');
-  }
+
+  const { login, loginByEmail, register, sendOtp, forgotPassword, resetPassword, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -33,6 +31,18 @@ export function LoginPage() {
     forgotOtp: '',
     forgotNewPassword: '',
   });
+
+  const { theme, toggleTheme } = useTheme();
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace('/app/dashboard');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Show spinner while auth is loading OR while we're mid-redirect
+  if (isLoading || isAuthenticated) {
+    return <LoadingSpinner size={50} />;
+  }
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -65,7 +75,7 @@ export function LoginPage() {
     setLoading(false);
 
     if (result.success) {
-      redirect('/dashboard');
+      redirect('/app/dashboard');
     } else {
       setError(result.error || 'Login failed');
     }
@@ -101,7 +111,7 @@ export function LoginPage() {
     setLoading(false);
 
     if (result.success) {
-      router.push('/dashboard');
+      router.push('/app/dashboard');
     } else {
       setError(result.error || 'Registration failed');
     }
@@ -143,8 +153,6 @@ export function LoginPage() {
     }
   };
 
-  const { theme, toggleTheme } = useTheme();
-  
   return (
     <div className="min-h-screen flex bg-slate-50 relative overflow-hidden">
       {/* Theme Toggle Button */}

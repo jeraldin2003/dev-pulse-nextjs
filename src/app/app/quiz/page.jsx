@@ -9,7 +9,7 @@ import { RefreshCw } from 'lucide-react';
 import { TabBar, SkeletonCard } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { useLeaderboard } from './_hooks/useLeaderboard.js';
-import { QuizPanel, LeaderboardPanel } from './_components';
+import { QuizPanel, LeaderboardPanel } from './_components/index.js';
 
 const TABS = [
   { id: 'quiz', label: 'Play Quiz' },
