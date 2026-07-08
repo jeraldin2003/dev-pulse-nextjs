@@ -18,7 +18,7 @@ import {
   PostsPanel,
   ProductivityPanel,
   TriviaPanel,
-} from '@/app/dashboard/_components';
+} from '@/app/app/dashboard/_components';
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'users', label: 'Users' },

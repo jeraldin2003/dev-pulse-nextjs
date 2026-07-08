@@ -1,8 +1,6 @@
 import "./globals.css";
-
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import SidebarLayout from "@/components/layout/SidebarLayout";
 export default function RootLayout({ children }) {
   return (
     <html
@@ -11,9 +9,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <ThemeProvider>
-            <SidebarLayout>
-              {children}
-            </SidebarLayout>
+            {children}
           </ThemeProvider>
         </AuthProvider>
       </body>
