@@ -221,7 +221,7 @@ export default function SidebarLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-5 md:p-8 overflow-y-auto dp-fade-in">
+        <main className="flex-1 overflow-y-auto dp-fade-in">
           {children}
         </main>
       </div>

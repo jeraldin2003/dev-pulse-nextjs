@@ -76,7 +76,7 @@ export default function DashboardPage() {
   const refresh = () => setRefreshKey(prev => prev + 1);
 
   return (
-    <div className="flex flex-col min-h-screen pb-12">
+    <div className="flex flex-col min-h-screen pb-12 p-5 md:p-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
